@@ -19,7 +19,7 @@ OUT="out"
 # El parametro decide que tests procesar.
 TARGET="${1:-all}"
 if [ "$TARGET" = "all" ]; then
-  TESTS="src/test_1 src/test_2"
+  TESTS="src/test_1 src/test_2 src/test_3"
 else
   TESTS="src/$TARGET"
 fi
@@ -28,6 +28,7 @@ process_test() {
   local TEST="$1"
   local INPUT="$TEST/01_matmul_linalg.mlir"
   local DEST="$OUT/${TEST#src/}"
+  mkdir -p "$DEST"
 
   # Etapa 0: copia de entrada.
   local STAGE00="$DEST/01_matmul_linalg.mlir"
@@ -38,6 +39,78 @@ process_test() {
   local STAGE05="$DEST/05_cf.mlir"
   local STAGE06="$DEST/06_llvm.mlir"
   local STAGE07="$DEST/07_unrolled.mlir"
+
+  # max 0c: entrada linalg completa.
+  local STAGE00="$DEST/01_matmul_linalg.mlir"
+  local INPUT="$TEST/01_matmul_linalg.mlir"
+
+  echo "================ $TEST ================"
+  echo "  [0c] entrada linalg -> $STAGE00"
+  cp "$INPUT" "$STAGE00"
+
+  # 0b: kernel SIN @main (driver invocación vive en el archivo completo).
+  local KERNEL="$DEST/_kernel.mlir"
+  echo "  [0b] kernel sin @main -> $KERNEL"
+  awk 'BEGIN{cut=0} /^\/\/ DRIVER \(invocación\)/{cut=1} !cut{print}' "$INPUT" > "$KERNEL"
+
+  # 1: linalg->affine (baja un nivel de representación; B1).
+  local STAGE02="$DEST/02_affine.mlir"
+  echo "  [1/7] B1: linalg->affine -> $STAGE02"
+  "$MLIR_OPT" "$KERNEL" \
+    --linalg-generalize-named-ops \
+    --convert-linalg-to-affine-loops \
+    -o "$STAGE02"
+
+  # 2: B2 — fusión de bucles (aplicamos una optimización; B2).
+  local STAGE03="$DEST/03_fused.mlir"
+  echo "  [2/7] B2: affine-loop-fusion -> $STAGE03"
+  "$MLIR_OPT" "$STAGE02" \
+    --affine-loop-fusion='fusion-maximal=1' \
+    -o "$STAGE03"
+
+  # 3: affine->scf (baja un nivel; B1).
+  local STAGE04="$DEST/04_scf.mlir"
+  echo "  [3/7] B1: affine->scf -> $STAGE04"
+  "$MLIR_OPT" "$STAGE03" --lower-affine -o "$STAGE04"
+
+  # 4: scf->cf (baja un nivel; B1).
+  local STAGE05="$DEST/05_cf.mlir"
+  echo "  [4/7] B1: scf->cf -> $STAGE05"
+  "$MLIR_OPT" "$STAGE04" --convert-scf-to-cf -o "$STAGE05"
+
+  # 5: cf -> llvm dialect (último nivel que vemos antes del machine code).
+  local STAGE06="$DEST/06_llvm.mlir"
+  echo "  [5/7] B1: final -> llvm dialect -> $STAGE06"
+  "$MLIR_OPT" "$STAGE05" \
+    --finalize-memref-to-llvm \
+    --convert-arith-to-llvm \
+    --convert-func-to-llvm \
+    --reconcile-unrealized-casts \
+    -o "$STAGE06"
+
+  # 6: B2 bonus — unroll (aplicamos otra optimización; B2).
+  local STAGE07="$DEST/07_unrolled.mlir"
+  echo "  [6/7] B2 bonus: affine-loop-unroll -> $STAGE07"
+  "$MLIR_OPT" "$STAGE02" \
+    --affine-loop-fusion='fusion-maximal=1' \
+    --affine-loop-unroll='unroll-full=1' \
+    -o "$STAGE07"
+
+  # 7a — [RUTA A] super-vectorize (best effort, NO fatal).
+  #   MLIR 18.1.3 de Ubuntu es CAPAZ de super-vectorizar, pero el kernel
+  #   matmul 3x4x5 (k=4) no siempre cumple las condiciones del analyzer.
+  #   Dejar el resultado (IR) o el error es evidencia; nunca abortamos.
+  local STAGE08="$DEST/08_supervec.mlir"
+  local ERR08="$DEST/08_vector_err.txt"
+  echo "  [7a/7] RUTA A: affine-super-vectorize (best effort) -> $STAGE08"
+  if "$MLIR_OPT" "$STAGE02" \
+       --affine-super-vectorize='vectorize-reductions=1' \
+       -o "$STAGE08" 2> "$ERR08"; then
+    echo "         ok: genero IR vectorizado (revisar vector.*)"
+  else
+    echo "         no pudo super-vectorizar; dejo la evidencia en $ERR08"
+    cp "$STAGE02" "$STAGE08"   # conservamos el affine; el error queda aparte.
+  fi
 
   echo "================ $TEST ================"
   mkdir -p "$DEST"
@@ -81,7 +154,25 @@ process_test() {
     --affine-loop-unroll='unroll-full=1' \
     -o "$STAGE07"
 
-  echo "  [7/7] ejecucion JIT del matmul:"
+  # 7: [RUTA A] super-vectorize, BEST EFFORT (evidencia, no fatal).
+  #   El pass de super-vectorización de MLIR 18.1.3 suele exigir tamaños
+  #   de bucle "amigables" para el análisis; con k=16 (test_3 e incluso
+  #   test_2 k=16): intentamos. Exito -> 08_vector_vec.mlir; fallo ->
+  #   el archivo de error queda como evidencia sin abortar (B2/B1: no
+  #   toda transformacion es siempre aplicable, y eso es resultado valido).
+  local STAGE08="$DEST/08_supervec.mlir"
+  echo "  [7/8] RUTA A: affine-super-vectorize (best effort) -> $STAGE08"
+  if "$MLIR_OPT" "$STAGE02" \
+       --affine-super-vectorize='vectorize-reductions=1' \
+       -o "$STAGE08" 2> "$DEST/08_supervec_error.txt"; then
+    echo "         ok: genero IR vectorizado (revisar vector.*)"
+  else
+    echo "         aviso: super-vectorize NO pudo; evidencia guardada en:"
+    echo "           $DEST/08_supervec_error.txt"
+    cp "$STAGE02" "$STAGE08"   # conservamos affine; el error queda aparte.
+  fi
+
+  echo "  [8/8] ejecucion JIT del matmul:"
   "$MLIR_OPT" "$INPUT" \
     --convert-linalg-to-loops \
     --convert-scf-to-cf \
