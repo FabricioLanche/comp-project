@@ -24,71 +24,67 @@ module {
     %21 = llvm.insertvalue %arg19, %20[4, 0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
     %22 = llvm.insertvalue %arg18, %21[3, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
     %23 = llvm.insertvalue %arg20, %22[4, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %24 = llvm.mlir.constant(0.000000e+00 : f32) : f32
-    %25 = llvm.mlir.constant(0 : index) : i64
-    %26 = llvm.mlir.constant(3 : index) : i64
-    %27 = llvm.mlir.constant(1 : index) : i64
-    llvm.br ^bb1(%25 : i64)
-  ^bb1(%28: i64):  // 2 preds: ^bb0, ^bb8
-    %29 = llvm.icmp "slt" %28, %26 : i64
-    llvm.cond_br %29, ^bb2, ^bb9
+    %24 = llvm.mlir.constant(4 : index) : i64
+    %25 = llvm.mlir.constant(5 : index) : i64
+    %26 = llvm.mlir.constant(0.000000e+00 : f32) : f32
+    %27 = llvm.mlir.constant(0 : index) : i64
+    %28 = llvm.mlir.constant(3 : index) : i64
+    %29 = llvm.mlir.constant(1 : index) : i64
+    llvm.br ^bb1(%27 : i64)
+  ^bb1(%30: i64):  // 2 preds: ^bb0, ^bb8
+    %31 = llvm.icmp "slt" %30, %28 : i64
+    llvm.cond_br %31, ^bb2, ^bb9
   ^bb2:  // pred: ^bb1
-    %30 = llvm.mlir.constant(0 : index) : i64
-    %31 = llvm.mlir.constant(5 : index) : i64
-    %32 = llvm.mlir.constant(1 : index) : i64
-    llvm.br ^bb3(%30 : i64)
-  ^bb3(%33: i64):  // 2 preds: ^bb2, ^bb7
-    %34 = llvm.icmp "slt" %33, %31 : i64
-    llvm.cond_br %34, ^bb4, ^bb8
+    llvm.br ^bb3(%27 : i64)
+  ^bb3(%32: i64):  // 2 preds: ^bb2, ^bb7
+    %33 = llvm.icmp "slt" %32, %25 : i64
+    llvm.cond_br %33, ^bb4, ^bb8
   ^bb4:  // pred: ^bb3
-    %35 = llvm.extractvalue %23[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %36 = llvm.mlir.constant(5 : index) : i64
-    %37 = llvm.mul %28, %36  : i64
-    %38 = llvm.add %37, %33  : i64
-    %39 = llvm.getelementptr %35[%38] : (!llvm.ptr, i64) -> !llvm.ptr, f32
-    llvm.store %24, %39 : f32, !llvm.ptr
-    %40 = llvm.mlir.constant(0 : index) : i64
-    %41 = llvm.mlir.constant(4 : index) : i64
-    %42 = llvm.mlir.constant(1 : index) : i64
-    llvm.br ^bb5(%40 : i64)
-  ^bb5(%43: i64):  // 2 preds: ^bb4, ^bb6
-    %44 = llvm.icmp "slt" %43, %41 : i64
-    llvm.cond_br %44, ^bb6, ^bb7
+    %34 = llvm.extractvalue %23[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %35 = llvm.mlir.constant(5 : index) : i64
+    %36 = llvm.mul %30, %35  : i64
+    %37 = llvm.add %36, %32  : i64
+    %38 = llvm.getelementptr %34[%37] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+    llvm.store %26, %38 : f32, !llvm.ptr
+    llvm.br ^bb5(%27 : i64)
+  ^bb5(%39: i64):  // 2 preds: ^bb4, ^bb6
+    %40 = llvm.icmp "slt" %39, %24 : i64
+    llvm.cond_br %40, ^bb6, ^bb7
   ^bb6:  // pred: ^bb5
-    %45 = llvm.extractvalue %7[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %46 = llvm.mlir.constant(4 : index) : i64
-    %47 = llvm.mul %28, %46  : i64
-    %48 = llvm.add %47, %43  : i64
-    %49 = llvm.getelementptr %45[%48] : (!llvm.ptr, i64) -> !llvm.ptr, f32
-    %50 = llvm.load %49 : !llvm.ptr -> f32
-    %51 = llvm.extractvalue %15[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %52 = llvm.mlir.constant(5 : index) : i64
-    %53 = llvm.mul %43, %52  : i64
-    %54 = llvm.add %53, %33  : i64
-    %55 = llvm.getelementptr %51[%54] : (!llvm.ptr, i64) -> !llvm.ptr, f32
-    %56 = llvm.load %55 : !llvm.ptr -> f32
-    %57 = llvm.extractvalue %23[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %58 = llvm.mlir.constant(5 : index) : i64
-    %59 = llvm.mul %28, %58  : i64
-    %60 = llvm.add %59, %33  : i64
-    %61 = llvm.getelementptr %57[%60] : (!llvm.ptr, i64) -> !llvm.ptr, f32
-    %62 = llvm.load %61 : !llvm.ptr -> f32
-    %63 = llvm.fmul %50, %56  : f32
-    %64 = llvm.fadd %62, %63  : f32
-    %65 = llvm.extractvalue %23[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %66 = llvm.mlir.constant(5 : index) : i64
-    %67 = llvm.mul %28, %66  : i64
-    %68 = llvm.add %67, %33  : i64
-    %69 = llvm.getelementptr %65[%68] : (!llvm.ptr, i64) -> !llvm.ptr, f32
-    llvm.store %64, %69 : f32, !llvm.ptr
-    %70 = llvm.add %43, %42  : i64
-    llvm.br ^bb5(%70 : i64)
+    %41 = llvm.extractvalue %7[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %42 = llvm.mlir.constant(4 : index) : i64
+    %43 = llvm.mul %30, %42  : i64
+    %44 = llvm.add %43, %39  : i64
+    %45 = llvm.getelementptr %41[%44] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+    %46 = llvm.load %45 : !llvm.ptr -> f32
+    %47 = llvm.extractvalue %15[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %48 = llvm.mlir.constant(5 : index) : i64
+    %49 = llvm.mul %39, %48  : i64
+    %50 = llvm.add %49, %32  : i64
+    %51 = llvm.getelementptr %47[%50] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+    %52 = llvm.load %51 : !llvm.ptr -> f32
+    %53 = llvm.extractvalue %23[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %54 = llvm.mlir.constant(5 : index) : i64
+    %55 = llvm.mul %30, %54  : i64
+    %56 = llvm.add %55, %32  : i64
+    %57 = llvm.getelementptr %53[%56] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+    %58 = llvm.load %57 : !llvm.ptr -> f32
+    %59 = llvm.fmul %46, %52  : f32
+    %60 = llvm.fadd %58, %59  : f32
+    %61 = llvm.extractvalue %23[1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
+    %62 = llvm.mlir.constant(5 : index) : i64
+    %63 = llvm.mul %30, %62  : i64
+    %64 = llvm.add %63, %32  : i64
+    %65 = llvm.getelementptr %61[%64] : (!llvm.ptr, i64) -> !llvm.ptr, f32
+    llvm.store %60, %65 : f32, !llvm.ptr
+    %66 = llvm.add %39, %29  : i64
+    llvm.br ^bb5(%66 : i64)
   ^bb7:  // pred: ^bb5
-    %71 = llvm.add %33, %32  : i64
-    llvm.br ^bb3(%71 : i64)
+    %67 = llvm.add %32, %29  : i64
+    llvm.br ^bb3(%67 : i64)
   ^bb8:  // pred: ^bb3
-    %72 = llvm.add %28, %27  : i64
-    llvm.br ^bb1(%72 : i64)
+    %68 = llvm.add %30, %29  : i64
+    llvm.br ^bb1(%68 : i64)
   ^bb9:  // pred: ^bb1
     llvm.return
   }

@@ -1,3 +1,6 @@
 .venv/
 .agents/
 main.tex
+contenido.texz
+src/test_3/dialect/gen/
+src/test_3/dialect/build/
