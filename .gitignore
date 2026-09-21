@@ -2,5 +2,5 @@
 .agents/
 main.tex
 contenido.texz
-src/test_3/dialect/gen/
-src/test_3/dialect/build/
+src/test_2/dialect/gen/
+src/test_2/dialect/build/

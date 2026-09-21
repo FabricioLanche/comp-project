@@ -1,5 +1,4 @@
 #include <stdio.h>
-
 #include "../matmul.h"
 
 int main(void) {
@@ -8,6 +7,7 @@ int main(void) {
   for (int i = 0; i < 3; i++)
     for (int k = 0; k < 4; k++)
       A[i * 4 + k] = 1.0f;
+
   for (int k = 0; k < 4; k++)
     for (int j = 0; j < 5; j++)
       B[k * 5 + j] = 1.0f;
@@ -19,7 +19,6 @@ int main(void) {
     for (int j = 0; j < 5; j++)
       if (C[i * 5 + j] != 4.0f) ok = 0;
 
-  printf("test_1 gcc (camino clasico) -> %s\n",
-         ok ? "0 (correcto)" : "1 (fallo)");
+  printf("test_1 gcc (camino clasico) -> %s\n", ok ? "0 (correcto)" : "1 (fallo)");
   return ok ? 0 : 1;
 }
